@@ -1,0 +1,130 @@
+// Prisma schema for Swara Rinjani (Rinjani project)
+// Run `npx prisma migrate dev` after setting DATABASE_URL in .env
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model RadioStation {
+  id             String   @id @default(cuid())
+  name           String
+  deskripsi      String
+  genre          String
+  streamUrl      String // Icecast/Shoutcast stream URL. Source provider TBD — safe to update anytime.
+  cover          String
+  pendengar      Int      @default(0)
+  bitrate        Int
+  penyiar        String
+  warna          String
+  programSaatIni String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model VideoItem {
+  id         String   @id @default(cuid())
+  judul      String // can be overridden by admin, otherwise synced from YouTube title
+  pembicara  String
+  kategori   String
+  thumbnail  String // auto-fetched from YouTube, admin can override
+  durasi     String // auto-fetched from YouTube (ISO 8601 duration converted to readable string)
+  penonton   Int      @default(0)
+  tanggal    DateTime
+  sedangLive Boolean  @default(false)
+  deskripsi  String
+  youtubeId  String   @unique // source of truth — used to fetch metadata and to embed the player
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model JadwalItem {
+  id           String   @id @default(cuid())
+  waktu        String
+  waktuSelesai String
+  judul        String
+  penyiar      String
+  tipe         String
+  hari         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String // hashed with bcrypt, never store plain text
+  name      String
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String // hashed with bcrypt, never store plain text
+  name      String
+  avatarUrl String @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations to be added once gated features are decided
+  // (e.g. favorites, comments) — kept minimal for now on purpose.
+}
+
+model AboutContent {
+  // Singleton row — always id "main". Holds the top-level hero text for
+  // the "Tentang Kami" page. Sections (flexible blocks) live in AboutSection below.
+  id          String   @id @default("main")
+  judul       String   @default("Tentang Kami")
+  subjudul    String   @default("")
+  deskripsi   String   @default("")
+  deskripsiKedua String   @default("")
+  gambarUtama String   @default("")
+  updatedAt   DateTime @updatedAt
+}
+
+model AboutSection {
+  // Flexible content blocks admin can add/remove freely — each renders as
+  // a div with an optional image, a title, and body text on the About page.
+  id        String   @id @default(cuid())
+  judul     String
+  konten    String
+  gambarUrl String   @default("")
+  urutan    Int      @default(0) // controls display order, lower = first
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Article {
+  id          String   @id @default(cuid())
+  judul       String
+  slug        String   @unique // used in URL: /artikel/slug-ini
+  ringkasan   String // short preview shown on the article list page
+  konten      String // rich HTML content from the Tiptap editor
+  gambarUtama String   @default("")
+  penulis     String
+  kategori    String
+  published   Boolean  @default(false) // draft until explicitly published
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model HeroContent {
+  id        String   @id
+  judul     String   @default("")
+  judulAksen  String   @default("")
+  subjudul  String   @default("")
+  deskripsi String   @default("")
+  updatedAt DateTime @updatedAt
+}
+
+model HeroGallery {
+  id        String   @id @default("main")
+  images    String[] @default([])
+  updatedAt DateTime @updatedAt
+}
